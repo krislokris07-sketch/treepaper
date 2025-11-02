@@ -16,7 +16,7 @@
 
         body {
             font-family: 'Georgia', serif;
-            background: #1a2f1a url('images/фон_страницы.jpg') no-repeat center center fixed;
+            background: #1a2f1a url('фон_страницы.jpg') no-repeat center center fixed;
             background-size: cover;
             color: #f5f5dc;
             min-height: 100vh;
@@ -62,7 +62,7 @@
 
         .map-frame {
             position: relative;
-            background: #2d1b0f url('images/фон_карты.jpg') no-repeat center center;
+            background: #2d1b0f url('фон_карты.jpg') no-repeat center center;
             background-size: cover;
             border: 12px solid #8B4513;
             height: 60vh;
@@ -117,7 +117,6 @@
             opacity: 0.9;
         }
 
-        /* Подсветка при приближении к рамке */
         .map-frame.highlight {
             box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
             border-color: rgba(255, 215, 0, 0.8);
@@ -200,7 +199,6 @@
             transform: scale(0.95);
         }
 
-        /* Адаптивность для очень маленьких экранов */
         @media (max-width: 360px) {
             .container {
                 padding: 10px;
@@ -268,9 +266,9 @@
     </div>
 
     <!-- Аудио файлы -->
-    <audio id="snapSound" src="audio/примагничивание.mp3" preload="auto"></audio>
-    <audio id="successSound" src="audio/успех.mp3" preload="auto"></audio>
-    <audio id="moveSound" src="audio/перемещение.mp3" preload="auto"></audio>
+    <audio id="snapSound" src="примагничивание.mp3" preload="auto"></audio>
+    <audio id="successSound" src="успех.mp3" preload="auto"></audio>
+    <audio id="moveSound" src="перемещение.mp3" preload="auto"></audio>
 
     <script>
         class PuzzleGame {
@@ -328,7 +326,7 @@
                     const piece = document.createElement('div');
                     piece.className = 'puzzle-piece in-storage';
                     piece.dataset.pieceId = i;
-                    piece.style.backgroundImage = `url('images/${russianFileNames[i]}')`;
+                    piece.style.backgroundImage = `url('${russianFileNames[i]}')`;
                     
                     this.pieces.push({
                         element: piece,
@@ -353,7 +351,6 @@
             }
             
             setupEventListeners() {
-                // Touch события для каждого фрагмента
                 this.pieces.forEach(pieceData => {
                     const piece = pieceData.element;
                     
@@ -364,7 +361,6 @@
                 
                 this.elements.hintButton.addEventListener('touchstart', () => this.showHint());
                 
-                // Предотвращаем стандартное поведение
                 document.addEventListener('touchmove', (e) => {
                     if (this.isDragging) e.preventDefault();
                 }, { passive: false });
@@ -408,7 +404,6 @@
                 piece.style.left = x + 'px';
                 piece.style.top = y + 'px';
                 
-                // Подсветка рамки при приближении
                 this.highlightFrame(touch.clientX, touch.clientY);
             }
             
@@ -418,7 +413,6 @@
                 this.isDragging = false;
                 const piece = this.draggedPiece.element;
                 
-                // Убираем подсветку рамки
                 this.elements.mapFrame.classList.remove('highlight');
                 
                 this.checkSnap(this.draggedPiece);
@@ -429,7 +423,6 @@
             highlightFrame(clientX, clientY) {
                 const frameRect = this.elements.mapFrame.getBoundingClientRect();
                 
-                // Подсвечиваем рамку если палец рядом с ней
                 if (clientX >= frameRect.left - 30 && clientX <= frameRect.right + 30 &&
                     clientY >= frameRect.top - 30 && clientY <= frameRect.bottom + 30) {
                     this.elements.mapFrame.classList.add('highlight');
