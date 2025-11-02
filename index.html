@@ -16,8 +16,7 @@
 
         body {
             font-family: 'Georgia', serif;
-            background: #1a2f1a url('фон_страницы.jpg') no-repeat center center fixed;
-            background-size: cover;
+            background: #1a2f1a;
             color: #f5f5dc;
             min-height: 100vh;
             overflow-x: hidden;
@@ -62,8 +61,7 @@
 
         .map-frame {
             position: relative;
-            background: #2d1b0f url('фон_карты.jpg') no-repeat center center;
-            background-size: cover;
+            background: #2d1b0f;
             border: 12px solid #8B4513;
             height: 60vh;
             min-height: 400px;
@@ -266,9 +264,9 @@
     </div>
 
     <!-- Аудио файлы -->
-    <audio id="snapSound" src="примагничивание.mp3" preload="auto"></audio>
-    <audio id="successSound" src="успех.mp3" preload="auto"></audio>
-    <audio id="moveSound" src="перемещение.mp3" preload="auto"></audio>
+    <audio id="snapSound" preload="auto"></audio>
+    <audio id="successSound" preload="auto"></audio>
+    <audio id="moveSound" preload="auto"></audio>
 
     <script>
         class PuzzleGame {
@@ -313,27 +311,43 @@
                     { x: 250, y: 300 }  // нижний центральный
                 ];
                 
-                const russianFileNames = [
-                    'верхний левый.png',
-                    'верхний правый.png', 
-                    'нижний левый.png',
-                    'нижний правый.png',
-                    'верхний центральный.png',
-                    'нижний центральный.png'
+                // Без пробелов в названиях
+                const fileNames = [
+                    'верхний_левый.png',
+                    'верхний_правый.png', 
+                    'нижний_левый.png',
+                    'нижний_правый.png',
+                    'верхний_центральный.png',
+                    'нижний_центральный.png'
                 ];
                 
                 for (let i = 0; i < this.totalPieces; i++) {
                     const piece = document.createElement('div');
                     piece.className = 'puzzle-piece in-storage';
                     piece.dataset.pieceId = i;
-                    piece.style.backgroundImage = `url('${russianFileNames[i]}')`;
+                    
+                    // Простая проверка загрузки изображения
+                    const img = new Image();
+                    img.onload = () => {
+                        piece.style.backgroundImage = "url('" + fileNames[i] + "')";
+                        console.log('Изображение загружено:', fileNames[i]);
+                    };
+                    img.onerror = () => {
+                        console.log('Ошибка загрузки:', fileNames[i]);
+                        piece.style.backgroundColor = '#8B4513';
+                        piece.style.display = 'flex';
+                        piece.style.alignItems = 'center';
+                        piece.style.justifyContent = 'center';
+                        piece.innerHTML = '<span style="color: white; font-size: 12px;">Фрагмент ' + (i+1) + '</span>';
+                    };
+                    img.src = fileNames[i];
                     
                     this.pieces.push({
                         element: piece,
                         id: i,
                         isSnapped: false,
                         correctPosition: snapPositions[i],
-                        fileName: russianFileNames[i]
+                        fileName: fileNames[i]
                     });
                     
                     this.elements.piecesContainer.appendChild(piece);
@@ -557,10 +571,11 @@
             }
             
             playSound(audioElement) {
-                if (audioElement) {
-                    audioElement.currentTime = 0;
-                    audioElement.play().catch(e => console.log('Audio play failed:', e));
-                }
+                // Временно отключим звук для отладки
+                // if (audioElement) {
+                //     audioElement.currentTime = 0;
+                //     audioElement.play().catch(e => console.log('Audio play failed:', e));
+                // }
             }
         }
 
