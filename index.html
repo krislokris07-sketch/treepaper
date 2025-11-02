@@ -82,17 +82,14 @@
             border-radius: 8px;
             border: 2px solid #8B4513;
             backdrop-filter: blur(5px);
+            position: relative;
         }
 
         .puzzle-piece {
-            width: 100%;
-            aspect-ratio: 1;
-            max-width: 90px;
-            margin: 0 auto;
+            width: 90px;
+            height: 90px;
             transition: all 0.3s ease;
             border: 2px solid rgba(255, 215, 0, 0.4);
-            position: absolute;
-            z-index: 10;
             background-size: cover;
             background-position: center;
             border-radius: 5px;
@@ -100,11 +97,12 @@
             touch-action: none;
         }
 
-        .puzzle-piece:active {
-            transform: scale(1.08);
+        .puzzle-piece.dragging {
+            transform: scale(1.1);
             border-color: rgba(255, 215, 0, 0.8);
             box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6);
-            z-index: 100;
+            z-index: 1000;
+            position: fixed !important;
         }
 
         .puzzle-piece.snapped {
@@ -112,11 +110,12 @@
             border: 2px solid #32CD32;
             box-shadow: 0 0 20px rgba(50, 205, 50, 0.7);
             animation: snapPulse 2s ease-in-out;
+            position: absolute;
         }
 
         .puzzle-piece.in-storage {
-            position: static;
             opacity: 0.9;
+            position: static;
         }
 
         .map-frame.highlight {
@@ -212,7 +211,8 @@
             }
             
             .puzzle-piece {
-                max-width: 80px;
+                width: 80px;
+                height: 80px;
             }
             
             .map-frame {
@@ -267,11 +267,6 @@
         </div>
     </div>
 
-    <!-- Аудио файлы -->
-    <audio id="snapSound" preload="auto"></audio>
-    <audio id="successSound" preload="auto"></audio>
-    <audio id="moveSound" preload="auto"></audio>
-
     <script>
         class PuzzleGame {
             constructor() {
@@ -281,12 +276,7 @@
                 this.isCompleted = false;
                 this.isDragging = false;
                 this.draggedPiece = null;
-                
-                this.audio = {
-                    move: document.getElementById('moveSound'),
-                    snap: document.getElementById('snapSound'),
-                    success: document.getElementById('successSound')
-                };
+                this.currentTouch = null;
                 
                 this.elements = {
                     piecesContainer: document.getElementById('piecesContainer'),
@@ -307,37 +297,27 @@
             }
             
             loadBackgrounds() {
-                // Загружаем фон страницы
                 const bodyBg = new Image();
                 bodyBg.onload = () => {
                     document.body.style.backgroundImage = "url('фон_страницы.jpg')";
-                    console.log('✅ Фон страницы загружен');
-                };
-                bodyBg.onerror = () => {
-                    console.log('❌ Фон страницы не загружен');
                 };
                 bodyBg.src = 'фон_страницы.jpg';
                 
-                // Загружаем фон карты
                 const mapBg = new Image();
                 mapBg.onload = () => {
                     this.elements.mapFrame.style.backgroundImage = "url('фон_карты.jpg')";
-                    console.log('✅ Фон карты загружен');
-                };
-                mapBg.onerror = () => {
-                    console.log('❌ Фон карты не загружен');
                 };
                 mapBg.src = 'фон_карты.jpg';
             }
             
             createPieces() {
                 const snapPositions = [
-                    { x: 150, y: 150 }, // верхний левый
-                    { x: 350, y: 150 }, // верхний правый
-                    { x: 150, y: 250 }, // нижний левый
-                    { x: 350, y: 250 }, // нижний правый
-                    { x: 250, y: 100 }, // верхний центральный
-                    { x: 250, y: 300 }  // нижний центральный
+                    { x: 150, y: 150 },
+                    { x: 350, y: 150 },
+                    { x: 150, y: 250 },
+                    { x: 350, y: 250 },
+                    { x: 250, y: 100 },
+                    { x: 250, y: 300 }
                 ];
                 
                 const fileNames = [
@@ -357,15 +337,6 @@
                     const img = new Image();
                     img.onload = () => {
                         piece.style.backgroundImage = "url('" + fileNames[i] + "')";
-                        console.log('✅ Фрагмент загружен:', fileNames[i]);
-                    };
-                    img.onerror = () => {
-                        console.log('❌ Ошибка фрагмента:', fileNames[i]);
-                        piece.style.backgroundColor = '#8B4513';
-                        piece.style.display = 'flex';
-                        piece.style.alignItems = 'center';
-                        piece.style.justifyContent = 'center';
-                        piece.innerHTML = '<span style="color: white; font-size: 12px;">Фрагмент ' + (i+1) + '</span>';
                     };
                     img.src = fileNames[i];
                     
@@ -374,7 +345,8 @@
                         id: i,
                         isSnapped: false,
                         correctPosition: snapPositions[i],
-                        fileName: fileNames[i]
+                        fileName: fileNames[i],
+                        originalRect: null
                     });
                     
                     this.elements.piecesContainer.appendChild(piece);
@@ -384,10 +356,10 @@
             setupSnapZones() {
                 this.snapZones = this.pieces.map(piece => ({
                     pieceId: piece.id,
-                    x: piece.correctPosition.x - 50,
-                    y: piece.correctPosition.y - 50,
-                    width: 100,
-                    height: 100
+                    x: piece.correctPosition.x - 45,
+                    y: piece.correctPosition.y - 45,
+                    width: 90,
+                    height: 90
                 }));
             }
             
@@ -396,81 +368,61 @@
                     const piece = pieceData.element;
                     
                     piece.addEventListener('touchstart', (e) => this.startDrag(e, pieceData));
-                    piece.addEventListener('touchmove', (e) => this.drag(e));
-                    piece.addEventListener('touchend', () => this.stopDrag());
                 });
                 
-                this.elements.hintButton.addEventListener('touchstart', () => this.showHint());
+                document.addEventListener('touchmove', (e) => this.drag(e));
+                document.addEventListener('touchend', () => this.stopDrag());
                 
-                document.addEventListener('touchmove', (e) => {
-                    if (this.isDragging) e.preventDefault();
-                }, { passive: false });
-                
-                document.addEventListener('touchend', () => {
-                    if (this.isDragging) this.stopDrag();
-                });
+                this.elements.hintButton.addEventListener('click', () => this.showHint());
             }
             
             startDrag(e, pieceData) {
                 if (pieceData.isSnapped || this.isCompleted) return;
                 
                 e.preventDefault();
+                e.stopPropagation();
+                
                 this.draggedPiece = pieceData;
                 this.isDragging = true;
+                this.currentTouch = e.touches[0];
                 
                 const piece = pieceData.element;
-                piece.classList.remove('in-storage');
+                const rect = piece.getBoundingClientRect();
                 
-                const touch = e.touches[0];
-                const pieceRect = piece.getBoundingClientRect();
-                
-                // ПРАВИЛЬНЫЙ расчет смещения
-                this.dragOffset = {
-                    x: touch.clientX - pieceRect.left,
-                    y: touch.clientY - pieceRect.top
+                // Сохраняем оригинальную позицию
+                pieceData.originalRect = {
+                    left: rect.left,
+                    top: rect.top,
+                    width: rect.width,
+                    height: rect.height
                 };
                 
-                console.log('Начали перетаскивание:', {
-                    touchX: touch.clientX,
-                    touchY: touch.clientY,
-                    pieceLeft: pieceRect.left,
-                    pieceTop: pieceRect.top,
-                    offsetX: this.dragOffset.x,
-                    offsetY: this.dragOffset.y
-                });
+                // Переключаем в режим перетаскивания
+                piece.classList.remove('in-storage');
+                piece.classList.add('dragging');
                 
-                this.playSound(this.audio.move);
+                // Устанавливаем начальную позицию
+                this.updatePiecePosition(piece, this.currentTouch.clientX - rect.width/2, this.currentTouch.clientY - rect.height/2);
             }
             
             drag(e) {
                 if (!this.isDragging || !this.draggedPiece) return;
                 
                 e.preventDefault();
-                const touch = e.touches[0];
+                this.currentTouch = e.touches[0];
+                
                 const piece = this.draggedPiece.element;
+                const rect = piece.getBoundingClientRect();
                 
-                // ПРАВИЛЬНЫЕ координаты с учетом смещения
-                const x = touch.clientX - this.dragOffset.x;
-                const y = touch.clientY - this.dragOffset.y;
+                // Обновляем позицию относительно касания
+                this.updatePiecePosition(piece, this.currentTouch.clientX - rect.width/2, this.currentTouch.clientY - rect.height/2);
                 
-                // Ограничиваем позицию в пределах экрана
-                const constrained = this.constrainPiecePosition(x, y);
-                
-                piece.style.left = constrained.x + 'px';
-                piece.style.top = constrained.y + 'px';
-                
-                this.highlightFrame(touch.clientX, touch.clientY);
+                this.highlightFrame(this.currentTouch.clientX, this.currentTouch.clientY);
             }
             
-            constrainPiecePosition(x, y) {
-                // Ограничиваем движение фрагмента областью экрана
-                const maxX = window.innerWidth - 100;
-                const maxY = window.innerHeight - 100;
-                
-                return {
-                    x: Math.max(10, Math.min(x, maxX)),
-                    y: Math.max(10, Math.min(y, maxY))
-                };
+            updatePiecePosition(piece, x, y) {
+                piece.style.left = x + 'px';
+                piece.style.top = y + 'px';
             }
             
             stopDrag() {
@@ -479,18 +431,19 @@
                 this.isDragging = false;
                 const piece = this.draggedPiece.element;
                 
+                piece.classList.remove('dragging');
                 this.elements.mapFrame.classList.remove('highlight');
                 
                 this.checkSnap(this.draggedPiece);
-                
                 this.draggedPiece = null;
+                this.currentTouch = null;
             }
             
             highlightFrame(clientX, clientY) {
                 const frameRect = this.elements.mapFrame.getBoundingClientRect();
                 
-                if (clientX >= frameRect.left - 30 && clientX <= frameRect.right + 30 &&
-                    clientY >= frameRect.top - 30 && clientY <= frameRect.bottom + 30) {
+                if (clientX >= frameRect.left - 50 && clientX <= frameRect.right + 50 &&
+                    clientY >= frameRect.top - 50 && clientY <= frameRect.bottom + 50) {
                     this.elements.mapFrame.classList.add('highlight');
                 } else {
                     this.elements.mapFrame.classList.remove('highlight');
@@ -506,15 +459,11 @@
                 const pieceCenterY = pieceRect.top + pieceRect.height / 2;
                 
                 const snapZone = this.snapZones.find(zone => zone.pieceId === pieceData.id);
-                
                 const zoneAbsoluteX = frameRect.left + snapZone.x;
                 const zoneAbsoluteY = frameRect.top + snapZone.y;
                 
-                if (pieceCenterX >= zoneAbsoluteX && 
-                    pieceCenterX <= zoneAbsoluteX + snapZone.width &&
-                    pieceCenterY >= zoneAbsoluteY && 
-                    pieceCenterY <= zoneAbsoluteY + snapZone.height) {
-                    
+                if (pieceCenterX >= zoneAbsoluteX && pieceCenterX <= zoneAbsoluteX + snapZone.width &&
+                    pieceCenterY >= zoneAbsoluteY && pieceCenterY <= zoneAbsoluteY + snapZone.height) {
                     this.snapPiece(pieceData);
                 } else {
                     this.returnToStorage(pieceData);
@@ -524,16 +473,14 @@
             snapPiece(pieceData) {
                 pieceData.isSnapped = true;
                 const piece = pieceData.element;
-                
                 const frameRect = this.elements.mapFrame.getBoundingClientRect();
-                piece.style.left = (frameRect.left + pieceData.correctPosition.x - 50) + 'px';
-                piece.style.top = (frameRect.top + pieceData.correctPosition.y - 50) + 'px';
+                
+                piece.style.left = (frameRect.left + pieceData.correctPosition.x - 45) + 'px';
+                piece.style.top = (frameRect.top + pieceData.correctPosition.y - 45) + 'px';
                 piece.classList.add('snapped');
                 
                 this.snappedPieces++;
                 this.updateProgress();
-                
-                this.playSound(this.audio.snap);
                 
                 if (this.snappedPieces === this.totalPieces) {
                     this.completePuzzle();
@@ -543,6 +490,7 @@
             returnToStorage(pieceData) {
                 const piece = pieceData.element;
                 piece.classList.add('in-storage');
+                piece.classList.remove('dragging');
                 piece.style.left = '';
                 piece.style.top = '';
             }
@@ -553,11 +501,7 @@
             
             completePuzzle() {
                 this.isCompleted = true;
-                
                 this.elements.completionMessage.classList.add('show');
-                
-                this.playSound(this.audio.success);
-                
                 this.startCelebration();
             }
             
@@ -620,14 +564,6 @@
                         piece.style.boxShadow = originalBoxShadow;
                     }, 2000);
                 }
-            }
-            
-            playSound(audioElement) {
-                // Временно отключим звук
-                // if (audioElement) {
-                //     audioElement.currentTime = 0;
-                //     audioElement.play().catch(e => console.log('Audio play failed:', e));
-                // }
             }
         }
 
