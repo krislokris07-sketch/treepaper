@@ -103,6 +103,7 @@
             z-index: 1000;
             position: fixed;
             margin: 0;
+            pointer-events: none;
         }
 
         .puzzle-piece.snapped {
@@ -313,7 +314,6 @@
             }
             
             setupEventListeners() {
-                // Обработчики для каждого фрагмента
                 this.pieces.forEach(pieceData => {
                     const piece = pieceData.element;
                     
@@ -323,61 +323,47 @@
                         
                         this.draggedPiece = pieceData;
                         const touch = e.touches[0];
-                        const pieceRect = piece.getBoundingClientRect();
-                        
-                        // ВЫЧИСЛЯЕМ СМЕЩЕНИЕ ПАЛЬЦА ОТНОСИТЕЛЬНО УГЛА ФРАГМЕНТА
-                        const offsetX = touch.clientX - pieceRect.left;
-                        const offsetY = touch.clientY - pieceRect.top;
                         
                         piece.classList.add('dragging');
                         
-                        // Сохраняем смещение для использования в moveHandler
-                        piece.dataset.offsetX = offsetX;
-                        piece.dataset.offsetY = offsetY;
-                        
-                        // Позиционируем с учетом смещения пальца
-                        piece.style.left = (touch.clientX - offsetX) + 'px';
-                        piece.style.top = (touch.clientY - offsetY) + 'px';
-                        
-                        // Обработчики движения и отпускания
+                        // ПРОСТОЙ И ТОЧНЫЙ РАСЧЕТ ПОЗИЦИИ
+                        piece.style.left = (touch.clientX - 45) + 'px';
+                        piece.style.top = (touch.clientY - 45) + 'px';
+
                         const moveHandler = (e) => {
                             if (!this.draggedPiece) return;
                             e.preventDefault();
                             const touch = e.touches[0];
                             
-                            // Используем сохраненное смещение
-                            const offsetX = parseFloat(piece.dataset.offsetX);
-                            const offsetY = parseFloat(piece.dataset.offsetY);
-                            
-                            piece.style.left = (touch.clientX - offsetX) + 'px';
-                            piece.style.top = (touch.clientY - offsetY) + 'px';
+                            // ПРОСТОЕ СЛЕДОВАНИЕ ЗА ПАЛЬЦЕМ
+                            piece.style.left = (touch.clientX - 45) + 'px';
+                            piece.style.top = (touch.clientY - 45) + 'px';
                             
                             // Подсветка рамки
                             const frameRect = this.elements.mapFrame.getBoundingClientRect();
-                            if (touch.clientX >= frameRect.left - 50 && touch.clientX <= frameRect.right + 50 &&
-                                touch.clientY >= frameRect.top - 50 && touch.clientY <= frameRect.bottom + 50) {
+                            if (touch.clientX >= frameRect.left && touch.clientX <= frameRect.right &&
+                                touch.clientY >= frameRect.top && touch.clientY <= frameRect.bottom) {
                                 this.elements.mapFrame.classList.add('highlight');
                             } else {
                                 this.elements.mapFrame.classList.remove('highlight');
                             }
                         };
                         
-                        const endHandler = () => {
+                        const endHandler = (e) => {
                             if (!this.draggedPiece) return;
+                            e.preventDefault();
                             
                             piece.classList.remove('dragging');
                             this.elements.mapFrame.classList.remove('highlight');
-                            
                             this.checkSnap(pieceData);
                             this.draggedPiece = null;
                             
-                            // Удаляем временные обработчики
                             document.removeEventListener('touchmove', moveHandler);
                             document.removeEventListener('touchend', endHandler);
                         };
                         
-                        document.addEventListener('touchmove', moveHandler);
-                        document.addEventListener('touchend', endHandler);
+                        document.addEventListener('touchmove', moveHandler, {passive: false});
+                        document.addEventListener('touchend', endHandler, {passive: false});
                     });
                 });
                 
@@ -389,15 +375,12 @@
                 const pieceRect = piece.getBoundingClientRect();
                 const frameRect = this.elements.mapFrame.getBoundingClientRect();
                 
-                const pieceCenterX = pieceRect.left + pieceRect.width / 2;
-                const pieceCenterY = pieceRect.top + pieceRect.height / 2;
-                
                 const snapZone = this.snapZones.find(zone => zone.pieceId === pieceData.id);
                 const zoneAbsoluteX = frameRect.left + snapZone.x;
                 const zoneAbsoluteY = frameRect.top + snapZone.y;
                 
-                if (pieceCenterX >= zoneAbsoluteX && pieceCenterX <= zoneAbsoluteX + snapZone.width &&
-                    pieceCenterY >= zoneAbsoluteY && pieceCenterY <= zoneAbsoluteY + snapZone.height) {
+                if (pieceRect.left >= zoneAbsoluteX - 30 && pieceRect.left <= zoneAbsoluteX + 30 &&
+                    pieceRect.top >= zoneAbsoluteY - 30 && pieceRect.top <= zoneAbsoluteY + 30) {
                     this.snapPiece(pieceData);
                 } else {
                     // Возвращаем в контейнер
