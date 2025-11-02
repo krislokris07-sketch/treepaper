@@ -94,35 +94,30 @@
             background-position: center;
             border-radius: 5px;
             box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+            cursor: pointer;
         }
 
-        .puzzle-piece.dragging {
-            transform: scale(1.1);
-            border-color: rgba(255, 215, 0, 0.8);
-            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6);
-            z-index: 1000;
-            position: fixed;
-            margin: 0;
-            pointer-events: none;
+        .puzzle-piece:active {
+            transform: scale(0.95);
         }
 
-        .puzzle-piece.snapped {
+        .puzzle-piece.placed {
+            position: absolute;
             pointer-events: none;
             border: 2px solid #32CD32;
             box-shadow: 0 0 20px rgba(50, 205, 50, 0.7);
-            animation: snapPulse 2s ease-in-out;
-            position: absolute;
+            animation: snapPulse 1s ease-in-out;
         }
 
-        .map-frame.highlight {
-            box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
-            border-color: rgba(255, 215, 0, 0.8);
-            transition: all 0.3s ease;
+        .puzzle-piece.used {
+            opacity: 0.3;
+            transform: scale(0.8);
+            pointer-events: none;
         }
 
         @keyframes snapPulse {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); box-shadow: 0 0 25px rgba(50, 205, 50, 0.9); }
+            50% { transform: scale(1.05); }
         }
 
         .completion-message {
@@ -232,7 +227,6 @@
                 this.snappedPieces = 0;
                 this.totalPieces = 6;
                 this.isCompleted = false;
-                this.draggedPiece = null;
                 
                 this.elements = {
                     piecesContainer: document.getElementById('piecesContainer'),
@@ -249,7 +243,6 @@
                 this.loadBackgrounds();
                 this.createPieces();
                 this.setupEventListeners();
-                this.setupSnapZones();
             }
             
             loadBackgrounds() {
@@ -267,13 +260,13 @@
             }
             
             createPieces() {
-                const snapPositions = [
-                    { x: 150, y: 150 },
-                    { x: 350, y: 150 },
-                    { x: 150, y: 250 },
-                    { x: 350, y: 250 },
-                    { x: 250, y: 100 },
-                    { x: 250, y: 300 }
+                const positions = [
+                    { x: 150, y: 150 }, // верхний левый
+                    { x: 350, y: 150 }, // верхний правый
+                    { x: 150, y: 250 }, // нижний левый
+                    { x: 350, y: 250 }, // нижний правый
+                    { x: 250, y: 100 }, // верхний центральный
+                    { x: 250, y: 300 }  // нижний центральный
                 ];
                 
                 const fileNames = [
@@ -294,8 +287,8 @@
                     this.pieces.push({
                         element: piece,
                         id: i,
-                        isSnapped: false,
-                        correctPosition: snapPositions[i],
+                        isPlaced: false,
+                        position: positions[i],
                         fileName: fileNames[i]
                     });
                     
@@ -303,100 +296,35 @@
                 }
             }
             
-            setupSnapZones() {
-                this.snapZones = this.pieces.map(piece => ({
-                    pieceId: piece.id,
-                    x: piece.correctPosition.x - 45,
-                    y: piece.correctPosition.y - 45,
-                    width: 90,
-                    height: 90
-                }));
-            }
-            
             setupEventListeners() {
+                // Обработчики клика для каждого фрагмента
                 this.pieces.forEach(pieceData => {
-                    const piece = pieceData.element;
-                    
-                    piece.addEventListener('touchstart', (e) => {
-                        if (pieceData.isSnapped || this.isCompleted) return;
-                        e.preventDefault();
-                        
-                        this.draggedPiece = pieceData;
-                        const touch = e.touches[0];
-                        
-                        piece.classList.add('dragging');
-                        
-                        // ПРОСТОЙ И ТОЧНЫЙ РАСЧЕТ ПОЗИЦИИ
-                        piece.style.left = (touch.clientX - 45) + 'px';
-                        piece.style.top = (touch.clientY - 45) + 'px';
-
-                        const moveHandler = (e) => {
-                            if (!this.draggedPiece) return;
-                            e.preventDefault();
-                            const touch = e.touches[0];
-                            
-                            // ПРОСТОЕ СЛЕДОВАНИЕ ЗА ПАЛЬЦЕМ
-                            piece.style.left = (touch.clientX - 45) + 'px';
-                            piece.style.top = (touch.clientY - 45) + 'px';
-                            
-                            // Подсветка рамки
-                            const frameRect = this.elements.mapFrame.getBoundingClientRect();
-                            if (touch.clientX >= frameRect.left && touch.clientX <= frameRect.right &&
-                                touch.clientY >= frameRect.top && touch.clientY <= frameRect.bottom) {
-                                this.elements.mapFrame.classList.add('highlight');
-                            } else {
-                                this.elements.mapFrame.classList.remove('highlight');
-                            }
-                        };
-                        
-                        const endHandler = (e) => {
-                            if (!this.draggedPiece) return;
-                            e.preventDefault();
-                            
-                            piece.classList.remove('dragging');
-                            this.elements.mapFrame.classList.remove('highlight');
-                            this.checkSnap(pieceData);
-                            this.draggedPiece = null;
-                            
-                            document.removeEventListener('touchmove', moveHandler);
-                            document.removeEventListener('touchend', endHandler);
-                        };
-                        
-                        document.addEventListener('touchmove', moveHandler, {passive: false});
-                        document.addEventListener('touchend', endHandler, {passive: false});
+                    pieceData.element.addEventListener('click', () => {
+                        if (pieceData.isPlaced || this.isCompleted) return;
+                        this.placePiece(pieceData);
                     });
                 });
                 
                 this.elements.hintButton.addEventListener('click', () => this.showHint());
             }
             
-            checkSnap(pieceData) {
+            placePiece(pieceData) {
+                pieceData.isPlaced = true;
                 const piece = pieceData.element;
-                const pieceRect = piece.getBoundingClientRect();
-                const frameRect = this.elements.mapFrame.getBoundingClientRect();
                 
-                const snapZone = this.snapZones.find(zone => zone.pieceId === pieceData.id);
-                const zoneAbsoluteX = frameRect.left + snapZone.x;
-                const zoneAbsoluteY = frameRect.top + snapZone.y;
+                // Помечаем фрагмент как использованный в контейнере
+                piece.classList.add('used');
                 
-                if (pieceRect.left >= zoneAbsoluteX - 30 && pieceRect.left <= zoneAbsoluteX + 30 &&
-                    pieceRect.top >= zoneAbsoluteY - 30 && pieceRect.top <= zoneAbsoluteY + 30) {
-                    this.snapPiece(pieceData);
-                } else {
-                    // Возвращаем в контейнер
-                    piece.style.left = '';
-                    piece.style.top = '';
-                }
-            }
-            
-            snapPiece(pieceData) {
-                pieceData.isSnapped = true;
-                const piece = pieceData.element;
-                const frameRect = this.elements.mapFrame.getBoundingClientRect();
+                // Создаем копию для карты
+                const placedPiece = piece.cloneNode(true);
+                placedPiece.classList.remove('used');
+                placedPiece.classList.add('placed');
                 
-                piece.style.left = (frameRect.left + pieceData.correctPosition.x - 45) + 'px';
-                piece.style.top = (frameRect.top + pieceData.correctPosition.y - 45) + 'px';
-                piece.classList.add('snapped');
+                // Позиционируем на карте
+                placedPiece.style.left = (pieceData.position.x - 45) + 'px';
+                placedPiece.style.top = (pieceData.position.y - 45) + 'px';
+                
+                this.elements.mapFrame.appendChild(placedPiece);
                 
                 this.snappedPieces++;
                 this.updateProgress();
@@ -418,16 +346,19 @@
             showHint() {
                 if (this.isCompleted) return;
                 
-                const unsnappedPiece = this.pieces.find(piece => !piece.isSnapped);
-                if (unsnappedPiece) {
-                    const piece = unsnappedPiece.element;
+                const unusedPiece = this.pieces.find(piece => !piece.isPlaced);
+                if (unusedPiece) {
+                    const piece = unusedPiece.element;
+                    const originalTransform = piece.style.transform;
                     const originalBoxShadow = piece.style.boxShadow;
                     
-                    piece.style.boxShadow = '0 0 20px 6px gold';
+                    piece.style.transform = 'scale(1.2)';
+                    piece.style.boxShadow = '0 0 25px gold';
                     
                     setTimeout(() => {
+                        piece.style.transform = originalTransform;
                         piece.style.boxShadow = originalBoxShadow;
-                    }, 2000);
+                    }, 1500);
                 }
             }
         }
