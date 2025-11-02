@@ -191,7 +191,7 @@
 
         .controls {
             display: flex;
-            justify-content: space-between;
+            justify-content: center; /* Изменено: центрируем прогресс */
             align-items: center;
             background: transparent;
             padding: 10px 20px;
@@ -202,33 +202,17 @@
         .progress {
             font-family: 'Underdog', cursive;
             font-size: 1.2em;
-            color: #fffeeb
+            color: #fffeeb;
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
         }
 
-        .hint-button {
-            background: transparent;
-            color: #fffeeb;
-            border: 2px solid #e8e5bc;
-            border-radius: 25px;
-            padding: 12px 25px;
-            font-family: 'Underdog', cursive;
-            font-size: 1.2em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-        }
-
-        .hint-button:active {
-            background: transparent;
-            transform: scale(0.95);
-        }
+        /* УДАЛЕНА КНОПКА ПОДСКАЗКИ */
     </style>
 </head>
 <body>
     <div class="container">
         <div class="story-text">
-            <h1>Разорванная карта</h1>
+            <h1>Это сердце мое трепещет буквами на ветру...</h1>
             <p>Старый дуб сохранил подсказку, но ветра разорвали её на части. Собери все фрагменты карты, чтобы узнать, где спрятан ключ к следующей главе...</p>
         </div>
 
@@ -251,7 +235,7 @@
             <div class="progress">
                 Собрано: <span id="progressCount">0</span>/6 фрагментов
             </div>
-            <button id="hintButton" class="hint-button">💡 Подсказка</button>
+            <!-- УДАЛЕНА КНОПКА ПОДСКАЗКИ -->
         </div>
     </div>
 
@@ -268,8 +252,8 @@
                     mapFrame: document.getElementById('mapFrame'),
                     mapArea: document.getElementById('mapArea'),
                     progressCount: document.getElementById('progressCount'),
-                    completionMessage: document.getElementById('completionMessage'),
-                    hintButton: document.getElementById('hintButton')
+                    completionMessage: document.getElementById('completionMessage')
+                    /* УДАЛЕН hintButton */
                 };
                 
                 this.init();
@@ -344,7 +328,7 @@
                     });
                 });
                 
-                this.elements.hintButton.addEventListener('click', () => this.showHint());
+                /* УДАЛЕН обработчик кнопки подсказки */
                 this.setupMessageClose();
             }
             
@@ -408,24 +392,7 @@
                 this.elements.completionMessage.classList.add('show');
             }
             
-            showHint() {
-                if (this.isCompleted) return;
-                
-                const unusedPiece = this.pieces.find(piece => !piece.isPlaced);
-                if (unusedPiece) {
-                    const piece = unusedPiece.element;
-                    const originalTransform = piece.style.transform;
-                    const originalBoxShadow = piece.style.boxShadow;
-                    
-                    piece.style.transform = 'scale(1.2)';
-                    piece.style.boxShadow = '0 0 30px gold';
-                    
-                    setTimeout(() => {
-                        piece.style.transform = originalTransform;
-                        piece.style.boxShadow = originalBoxShadow;
-                    }, 1500);
-                }
-            }
+            /* УДАЛЕН метод showHint() */
         }
 
         document.addEventListener('DOMContentLoaded', () => {
