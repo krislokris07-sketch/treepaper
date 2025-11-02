@@ -64,6 +64,8 @@
             position: relative;
             background: #2d1b0f;
             background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
             border: 12px solid #8B4513;
             height: 60vh;
             min-height: 400px;
@@ -420,12 +422,22 @@
                 piece.classList.remove('in-storage');
                 
                 const touch = e.touches[0];
-                const rect = piece.getBoundingClientRect();
+                const pieceRect = piece.getBoundingClientRect();
                 
+                // ПРАВИЛЬНЫЙ расчет смещения
                 this.dragOffset = {
-                    x: touch.clientX - rect.left,
-                    y: touch.clientY - rect.top
+                    x: touch.clientX - pieceRect.left,
+                    y: touch.clientY - pieceRect.top
                 };
+                
+                console.log('Начали перетаскивание:', {
+                    touchX: touch.clientX,
+                    touchY: touch.clientY,
+                    pieceLeft: pieceRect.left,
+                    pieceTop: pieceRect.top,
+                    offsetX: this.dragOffset.x,
+                    offsetY: this.dragOffset.y
+                });
                 
                 this.playSound(this.audio.move);
             }
@@ -437,13 +449,28 @@
                 const touch = e.touches[0];
                 const piece = this.draggedPiece.element;
                 
+                // ПРАВИЛЬНЫЕ координаты с учетом смещения
                 const x = touch.clientX - this.dragOffset.x;
                 const y = touch.clientY - this.dragOffset.y;
                 
-                piece.style.left = x + 'px';
-                piece.style.top = y + 'px';
+                // Ограничиваем позицию в пределах экрана
+                const constrained = this.constrainPiecePosition(x, y);
+                
+                piece.style.left = constrained.x + 'px';
+                piece.style.top = constrained.y + 'px';
                 
                 this.highlightFrame(touch.clientX, touch.clientY);
+            }
+            
+            constrainPiecePosition(x, y) {
+                // Ограничиваем движение фрагмента областью экрана
+                const maxX = window.innerWidth - 100;
+                const maxY = window.innerHeight - 100;
+                
+                return {
+                    x: Math.max(10, Math.min(x, maxX)),
+                    y: Math.max(10, Math.min(y, maxY))
+                };
             }
             
             stopDrag() {
