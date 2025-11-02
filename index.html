@@ -102,6 +102,7 @@
             box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6);
             z-index: 1000;
             position: fixed;
+            margin: 0;
         }
 
         .puzzle-piece.snapped {
@@ -322,13 +323,21 @@
                         
                         this.draggedPiece = pieceData;
                         const touch = e.touches[0];
+                        const pieceRect = piece.getBoundingClientRect();
                         
-                        // Переключаем в режим перетаскивания
+                        // ВЫЧИСЛЯЕМ СМЕЩЕНИЕ ПАЛЬЦА ОТНОСИТЕЛЬНО УГЛА ФРАГМЕНТА
+                        const offsetX = touch.clientX - pieceRect.left;
+                        const offsetY = touch.clientY - pieceRect.top;
+                        
                         piece.classList.add('dragging');
                         
-                        // Позиционируем под пальцем
-                        piece.style.left = (touch.clientX - 45) + 'px';
-                        piece.style.top = (touch.clientY - 45) + 'px';
+                        // Сохраняем смещение для использования в moveHandler
+                        piece.dataset.offsetX = offsetX;
+                        piece.dataset.offsetY = offsetY;
+                        
+                        // Позиционируем с учетом смещения пальца
+                        piece.style.left = (touch.clientX - offsetX) + 'px';
+                        piece.style.top = (touch.clientY - offsetY) + 'px';
                         
                         // Обработчики движения и отпускания
                         const moveHandler = (e) => {
@@ -336,8 +345,12 @@
                             e.preventDefault();
                             const touch = e.touches[0];
                             
-                            piece.style.left = (touch.clientX - 45) + 'px';
-                            piece.style.top = (touch.clientY - 45) + 'px';
+                            // Используем сохраненное смещение
+                            const offsetX = parseFloat(piece.dataset.offsetX);
+                            const offsetY = parseFloat(piece.dataset.offsetY);
+                            
+                            piece.style.left = (touch.clientX - offsetX) + 'px';
+                            piece.style.top = (touch.clientY - offsetY) + 'px';
                             
                             // Подсветка рамки
                             const frameRect = this.elements.mapFrame.getBoundingClientRect();
