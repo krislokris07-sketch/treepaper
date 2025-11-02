@@ -71,6 +71,17 @@
             min-height: 400px;
             border-radius: 8px;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        .map-area {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 400px;
+            background: rgba(210, 180, 140, 0.1);
         }
 
         .pieces-container {
@@ -201,6 +212,7 @@
 
         <div class="game-area">
             <div class="map-frame" id="mapFrame">
+                <div class="map-area" id="mapArea"></div>
                 <div class="completion-message" id="completionMessage">
                     <h2>🎉 Карта собрана!</h2>
                     <p>Посмотри на собранную карту - там указано местонахождение подарка!</p>
@@ -231,6 +243,7 @@
                 this.elements = {
                     piecesContainer: document.getElementById('piecesContainer'),
                     mapFrame: document.getElementById('mapFrame'),
+                    mapArea: document.getElementById('mapArea'),
                     progressCount: document.getElementById('progressCount'),
                     completionMessage: document.getElementById('completionMessage'),
                     hintButton: document.getElementById('hintButton')
@@ -260,13 +273,14 @@
             }
             
             createPieces() {
+                // Позиции для сетки 2x3 (2 колонки, 3 строки)
                 const positions = [
-                    { x: 150, y: 150 }, // верхний левый
-                    { x: 350, y: 150 }, // верхний правый
-                    { x: 150, y: 250 }, // нижний левый
-                    { x: 350, y: 250 }, // нижний правый
-                    { x: 250, y: 100 }, // верхний центральный
-                    { x: 250, y: 300 }  // нижний центральный
+                    { x: 50, y: 50 },   // верхний левый
+                    { x: 150, y: 50 },  // верхний правый
+                    { x: 50, y: 150 },  // средний левый  
+                    { x: 150, y: 150 }, // средний правый
+                    { x: 50, y: 250 },  // нижний левый
+                    { x: 150, y: 250 }  // нижний правый
                 ];
                 
                 const fileNames = [
@@ -297,7 +311,6 @@
             }
             
             setupEventListeners() {
-                // Обработчики клика для каждого фрагмента
                 this.pieces.forEach(pieceData => {
                     pieceData.element.addEventListener('click', () => {
                         if (pieceData.isPlaced || this.isCompleted) return;
@@ -312,17 +325,18 @@
                 pieceData.isPlaced = true;
                 const piece = pieceData.element;
                 
-                // Помечаем фрагмент как использованный в контейнере
                 piece.classList.add('used');
                 
-                // Создаем копию для карты
                 const placedPiece = piece.cloneNode(true);
                 placedPiece.classList.remove('used');
                 placedPiece.classList.add('placed');
                 
-                // Позиционируем на карте
-                placedPiece.style.left = (pieceData.position.x - 45) + 'px';
-                placedPiece.style.top = (pieceData.position.y - 45) + 'px';
+                // Позиционируем относительно mapArea
+                const mapAreaRect = this.elements.mapArea.getBoundingClientRect();
+                const frameRect = this.elements.mapFrame.getBoundingClientRect();
+                
+                placedPiece.style.left = (mapAreaRect.left - frameRect.left + pieceData.position.x) + 'px';
+                placedPiece.style.top = (mapAreaRect.top - frameRect.top + pieceData.position.y) + 'px';
                 
                 this.elements.mapFrame.appendChild(placedPiece);
                 
