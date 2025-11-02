@@ -79,14 +79,14 @@
             top: 50%;
             left: 47%;
             transform: translate(-50%, -50%);
-            width: 360px; /* 3 колонки по 90px */
-            height: 240px; /* 2 строки по 90px */
+            width: 360px;
+            height: 240px;
             background: rgba(210, 180, 140, 0.1);
         }
 
         .pieces-container {
             display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3 колонки */
+            grid-template-columns: repeat(3, 1fr);
             gap: 12px;
             padding: 15px;
             background: rgba(139, 69, 19, 0.5);
@@ -224,7 +224,7 @@
                 <div class="completion-message" id="completionMessage">
                     <h2>🎉 Карта собрана!</h2>
                     <p>Посмотри на собранную карту - там указано местонахождение подарка!</p>
-                    <p class="close-hint">Нажми anywhere чтобы закрыть</p>
+                    <p class="close-hint">тык!</p>
                 </div>
             </div>
             
@@ -268,13 +268,13 @@
             }
             
             shuffleArray(array) {
-        const newArray = [...array];
-        for (let i = newArray.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-        }
-        return newArray;
-    }
+                const newArray = [...array];
+                for (let i = newArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+                }
+                return newArray;
+            }
             
             loadBackgrounds() {
                 const bodyBg = new Image();
@@ -290,47 +290,43 @@
                 mapBg.src = 'фон_карты.jpg';
             }
             
-           createPieces() {
-    // Позиции для сетки 3x2
-    const positions = [
-        { x: 0, y: 0 },    // верхний левый
-        { x: 120, y: 0 },  // верхний центральный
-        { x: 240, y: 0 },  // верхний правый
-        { x: 0, y: 120 },  // нижний левый
-        { x: 120, y: 120 },// нижний центральный
-        { x: 240, y: 120 } // нижний правый
-    ];
-    
-    const fileNames = [
-        'верхний_левый.png',
-        'верхний_центральный.png', 
-        'верхний_правый.png',
-        'нижний_левый.png',
-        'нижний_центральный.png',
-        'нижний_правый.png'
-    ];
-    
-    // ПЕРЕМЕШИВАЕМ файлы
-    const shuffledFileNames = this.shuffleArray([...fileNames]);
-    
-    for (let i = 0; i < this.totalPieces; i++) {
-        const piece = document.createElement('div');
-        piece.className = 'puzzle-piece';
-        piece.dataset.pieceId = i;
-        piece.style.backgroundImage = "url('" + shuffledFileNames[i] + "')";
-        
-        this.pieces.push({
-            element: piece,
-            id: i,
-            isPlaced: false,
-            position: positions[i],
-            fileName: shuffledFileNames[i]
-        });
-        
-        this.elements.piecesContainer.appendChild(piece);
-    }
-}
-            
+            createPieces() {
+                const positions = [
+                    { x: 0, y: 0 },
+                    { x: 120, y: 0 },
+                    { x: 240, y: 0 },
+                    { x: 0, y: 120 },
+                    { x: 120, y: 120 },
+                    { x: 240, y: 120 }
+                ];
+                
+                const fileNames = [
+                    'верхний_левый.png',
+                    'верхний_центральный.png', 
+                    'верхний_правый.png',
+                    'нижний_левый.png',
+                    'нижний_центральный.png',
+                    'нижний_правый.png'
+                ];
+                
+                const shuffledFileNames = this.shuffleArray([...fileNames]);
+                
+                for (let i = 0; i < this.totalPieces; i++) {
+                    const piece = document.createElement('div');
+                    piece.className = 'puzzle-piece';
+                    piece.dataset.pieceId = i;
+                    piece.style.backgroundImage = "url('" + shuffledFileNames[i] + "')";
+                    
+                    this.pieces.push({
+                        element: piece,
+                        id: i,
+                        isPlaced: false,
+                        position: positions[i],
+                        fileName: shuffledFileNames[i]
+                    });
+                    
+                    this.elements.piecesContainer.appendChild(piece);
+                }
             }
             
             setupEventListeners() {
@@ -342,24 +338,19 @@
                 });
                 
                 this.elements.hintButton.addEventListener('click', () => this.showHint());
-                
-                // Обработчик закрытия сообщения по тапу
                 this.setupMessageClose();
             }
             
             setupMessageClose() {
-                // Закрытие по клику на сообщение
                 this.elements.completionMessage.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.hideCompletionMessage();
                 });
                 
-                // Закрытие по клику в любом месте экрана
                 document.addEventListener('click', () => {
                     this.hideCompletionMessage();
                 });
                 
-                // Предотвращаем закрытие при клике на саму карту или элементы
                 this.elements.mapFrame.addEventListener('click', (e) => {
                     e.stopPropagation();
                 });
@@ -385,7 +376,6 @@
                 placedPiece.classList.remove('used');
                 placedPiece.classList.add('placed');
                 
-                // Позиционируем относительно mapArea
                 const mapAreaRect = this.elements.mapArea.getBoundingClientRect();
                 const frameRect = this.elements.mapFrame.getBoundingClientRect();
                 
