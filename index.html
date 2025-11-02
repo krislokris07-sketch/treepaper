@@ -17,6 +17,7 @@
         body {
             font-family: 'Georgia', serif;
             background: #1a2f1a;
+            background-size: cover;
             color: #f5f5dc;
             min-height: 100vh;
             overflow-x: hidden;
@@ -62,6 +63,7 @@
         .map-frame {
             position: relative;
             background: #2d1b0f;
+            background-size: cover;
             border: 12px solid #8B4513;
             height: 60vh;
             min-height: 400px;
@@ -296,9 +298,34 @@
             }
             
             init() {
+                this.loadBackgrounds();
                 this.createPieces();
                 this.setupEventListeners();
                 this.setupSnapZones();
+            }
+            
+            loadBackgrounds() {
+                // Загружаем фон страницы
+                const bodyBg = new Image();
+                bodyBg.onload = () => {
+                    document.body.style.backgroundImage = "url('фон_страницы.jpg')";
+                    console.log('✅ Фон страницы загружен');
+                };
+                bodyBg.onerror = () => {
+                    console.log('❌ Фон страницы не загружен');
+                };
+                bodyBg.src = 'фон_страницы.jpg';
+                
+                // Загружаем фон карты
+                const mapBg = new Image();
+                mapBg.onload = () => {
+                    this.elements.mapFrame.style.backgroundImage = "url('фон_карты.jpg')";
+                    console.log('✅ Фон карты загружен');
+                };
+                mapBg.onerror = () => {
+                    console.log('❌ Фон карты не загружен');
+                };
+                mapBg.src = 'фон_карты.jpg';
             }
             
             createPieces() {
@@ -311,7 +338,6 @@
                     { x: 250, y: 300 }  // нижний центральный
                 ];
                 
-                // Без пробелов в названиях
                 const fileNames = [
                     'верхний_левый.png',
                     'верхний_правый.png', 
@@ -326,14 +352,13 @@
                     piece.className = 'puzzle-piece in-storage';
                     piece.dataset.pieceId = i;
                     
-                    // Простая проверка загрузки изображения
                     const img = new Image();
                     img.onload = () => {
                         piece.style.backgroundImage = "url('" + fileNames[i] + "')";
-                        console.log('Изображение загружено:', fileNames[i]);
+                        console.log('✅ Фрагмент загружен:', fileNames[i]);
                     };
                     img.onerror = () => {
-                        console.log('Ошибка загрузки:', fileNames[i]);
+                        console.log('❌ Ошибка фрагмента:', fileNames[i]);
                         piece.style.backgroundColor = '#8B4513';
                         piece.style.display = 'flex';
                         piece.style.alignItems = 'center';
@@ -571,7 +596,7 @@
             }
             
             playSound(audioElement) {
-                // Временно отключим звук для отладки
+                // Временно отключим звук
                 // if (audioElement) {
                 //     audioElement.currentTime = 0;
                 //     audioElement.play().catch(e => console.log('Audio play failed:', e));
